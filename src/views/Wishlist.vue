@@ -6,7 +6,7 @@
       <p class="text-sm text-gray-400 mt-1">Products you saved for later</p>
     </div>
 
-    <!-- Toast notification -->
+    <!-- Toast -->
     <transition name="fade">
       <div v-if="toast.show"
            class="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium

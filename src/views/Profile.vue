@@ -229,6 +229,7 @@ const passwordMismatch = computed(() =>
     passwordForm.password !== passwordForm.password_confirmation
 )
 
+// ── Update Profile ─────────────────────────────────────────
 async function updateProfile() {
     profileLoading.value = true
     profileSuccess.value = false
@@ -251,6 +252,7 @@ async function updateProfile() {
     }
 }
 
+// ── Change Password ─────────────────────────────────────────────
 async function changePassword() {
     if (passwordMismatch.value) return
     passwordLoading.value = true
