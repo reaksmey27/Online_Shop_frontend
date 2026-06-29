@@ -40,9 +40,7 @@
           :to="`/products/${product.id}`"
           class="relative block bg-gray-50 border-b border-gray-50"
         >
-          <!-- HOT badge to match Deals UI -->
-          <div
-          <div class="aspect-[4/3] sm:aspect-[3/2] w-full">
+          <div class="aspect-[4/3] sm:aspect-[3/2] w-full relative">
             <div class="absolute inset-0 flex items-center justify-center p-4">
               <img
                 v-if="getProductImage(product)"

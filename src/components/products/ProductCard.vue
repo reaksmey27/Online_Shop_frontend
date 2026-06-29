@@ -53,6 +53,9 @@
         >
           ${{ Number(product.original_price).toFixed(2) }}
         </span>
+        <span v-if="avgRating" class="ml-auto text-xs font-semibold text-amber-500 flex items-center gap-0.5">
+          ★ {{ avgRating }}
+        </span>
       </div>
 
       <div class="mt-4 flex items-center gap-2">
@@ -99,6 +102,11 @@ const productImage = computed(() => {
   const p = props.product;
   return p?.image || p?.imageUrl || p?.image_url || p?.image_path || null;
 });
+
+const avgRating = computed(() => {
+  const r = props.product?.average_rating ?? props.product?.reviews_avg_rating
+  return r ? Number(r).toFixed(1) : null
+})
 
 function handleImageError() {
   imgLoadError.value = true;

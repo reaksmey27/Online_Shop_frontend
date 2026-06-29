@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <div class="mb-8">
@@ -13,7 +14,7 @@
     </div>
 
     <!-- Empty Cart -->
-    <div v-else-if="cartItems.length === 0"
+    <div v-else-if="cartItems.length === 0 && !orderSuccess"
          class="text-center py-20 border border-dashed border-gray-200 rounded-3xl bg-white">
       <ShoppingCartIcon class="w-16 h-16 text-gray-200 mx-auto mb-4 stroke-[1.2]" />
       <h3 class="font-black text-gray-700">Your cart is empty</h3>
@@ -29,24 +30,26 @@
       <div class="flex-1 w-full space-y-6">
 
         <!-- Order Success -->
-        <div v-if="orderSuccess"
-             class="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-          <CheckCircleIcon class="w-14 h-14 text-green-500 mx-auto mb-4" />
-          <h3 class="font-black text-green-800 text-xl tracking-tight">
+        <!-- Order Success -->
+        <div v-if="orderSuccess" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-8 text-center">
+          <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircleIcon class="w-9 h-9 text-emerald-500" />
+          </div>
+          <h3 class="font-black text-emerald-900 text-xl tracking-tight">
             Order Placed Successfully!
           </h3>
-          <p class="text-green-600 text-sm mt-2">
+          <p class="text-emerald-600 text-sm mt-2">
             Your order has been confirmed and is being processed.
           </p>
           <div class="flex gap-3 justify-center mt-6">
             <router-link to="/orders"
-              class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-xl
-                     text-sm font-bold transition-colors shadow-sm shadow-green-600/20">
+              class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl
+                     text-sm font-bold transition-colors shadow-sm">
               View My Orders
             </router-link>
             <router-link to="/products"
-              class="border border-gray-200 text-gray-700 hover:bg-gray-50 px-6 py-2.5
-                     rounded-xl text-sm font-medium transition-colors">
+              class="border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-6 py-2.5
+                     rounded-xl text-sm font-bold transition-colors">
               Continue Shopping
             </router-link>
           </div>
@@ -111,6 +114,22 @@
             <p v-if="errors.payment_method" class="text-red-500 text-xs mt-2">
               {{ errors.payment_method }}
             </p>
+          </div>
+
+          <!-- Order Notes -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 class="font-black text-gray-900 text-base mb-4 flex items-center gap-2">
+              <PencilSquareIcon class="w-5 h-5 text-blue-600" />
+              Order Notes
+              <span class="text-xs font-medium text-gray-400">(optional)</span>
+            </h2>
+            <textarea
+              v-model="form.order_notes"
+              rows="2"
+              placeholder="Special instructions, delivery notes..."
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none
+                     focus:ring-2 focus:border-blue-500 focus:ring-blue-100 transition-colors resize-none"
+            />
           </div>
 
           <!-- Place Order — mobile only -->
@@ -216,6 +235,14 @@
 
     </div>
   </div>
+
+  <!-- Post-order Review Modal -->
+  <PostOrderReviewModal
+    :show="showReviewModal"
+    :products="orderedProducts"
+    @close="showReviewModal = false"
+  />
+  </div>
 </template>
 
 <script setup>
@@ -231,18 +258,29 @@ import {
     CubeIcon,
     BanknotesIcon,
     DevicePhoneMobileIcon,
+    PencilSquareIcon,
 } from '@heroicons/vue/24/outline'
+import { useCartStore } from '@/stores/cart'
 
-const cartItems    = ref([])
-const loading      = ref(true)
-const submitting   = ref(false)
-const orderSuccess = ref(false)
-const errorMsg     = ref('')
-const errors       = ref({})
+import PostOrderReviewModal from '@/components/checkout/PostOrderReviewModal.vue'
+
+const cartStore = useCartStore()
+
+const cartItems     = ref([])
+const loading       = ref(true)
+const submitting    = ref(false)
+const orderSuccess  = ref(false)
+const errorMsg      = ref('')
+const errors        = ref({})
+const showReviewModal = ref(false)
+const orderedProducts = ref([])
+
+function skipReview() {}
 
 const form = ref({
     shipping_address: '',
     payment_method:   'cash',
+    order_notes:      '',
 })
 
 const paymentMethods = [
@@ -290,13 +328,24 @@ async function placeOrder() {
     if (!validate()) return
     submitting.value = true
     errorMsg.value   = ''
+
+    const productsForReview = cartItems.value
+        .map(i => i.product)
+        .filter(Boolean)
+
     try {
         await api.post('/orders/checkout', {
             shipping_address: form.value.shipping_address,
             payment_method:   form.value.payment_method,
+            order_notes:      form.value.order_notes || undefined,
         })
-        orderSuccess.value = true
-        cartItems.value    = []
+        orderedProducts.value = productsForReview
+        orderSuccess.value    = true
+        cartItems.value       = []
+        cartStore.reset()
+
+        // Show review modal after success banner is visible
+        setTimeout(() => { showReviewModal.value = true }, 900)
     } catch (e) {
         errorMsg.value =
             e.response?.data?.message ?? 'Failed to place order. Please try again.'

@@ -4,8 +4,8 @@
 
       <button
         type="button"
-        @click="change(currentPage - 1)"
-        :disabled="currentPage <= 1"
+        @click="change(modelValue - 1)"
+        :disabled="modelValue <= 1"
         class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed rounded-xl transition-all focus:outline-none cursor-pointer"
         aria-label="Previous Page"
       >
@@ -13,13 +13,13 @@
       </button>
 
       <div class="px-4 text-xs font-black text-gray-700 min-w-[100px] text-center select-none">
-        {{ currentPage }} <span class="text-gray-400 font-normal mx-1">/</span> {{ lastPage }}
+        {{ modelValue }} <span class="text-gray-400 font-normal mx-1">/</span> {{ lastPage }}
       </div>
 
       <button
         type="button"
-        @click="change(currentPage + 1)"
-        :disabled="currentPage >= lastPage"
+        @click="change(modelValue + 1)"
+        :disabled="modelValue >= lastPage"
         class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed rounded-xl transition-all focus:outline-none cursor-pointer"
         aria-label="Next Page"
       >
@@ -31,19 +31,18 @@
 </template>
 
 <script setup>
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/vue/24/outline"
-
-const emit = defineEmits(['change'])
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-  lastPage: { type: Number, required: true },
+  modelValue: { type: Number, required: true },
+  lastPage:   { type: Number, required: true },
 })
 
-const currentPage = defineModel('currentPage', { type: Number, required: true })
+const emit = defineEmits(['update:modelValue', 'change'])
 
 function change(page) {
   if (page < 1 || page > props.lastPage) return
-  currentPage.value = page
+  emit('update:modelValue', page)
   emit('change', page)
 }
 </script>

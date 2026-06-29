@@ -12,7 +12,6 @@ const api = axios.create({
 })
 
 // ── Request Interceptor ──────────────────────────────────
-// Attach Bearer token on every request automatically
 api.interceptors.request.use(
     config => {
         const token = localStorage.getItem('token')
@@ -25,29 +24,24 @@ api.interceptors.request.use(
 )
 
 // ── Response Interceptor ─────────────────────────────────
-// Handle 401 Unauthorized globally — clear auth and redirect
+// Handle 401 Unauthorized globally using Vue Router (no hard reload)
 api.interceptors.response.use(
     response => response,
     error => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            // Only redirect if not already on the login page
-            if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/login'
-            }
+            // Use dynamic import to avoid circular dep; push via router instance
+            import('@/router').then(({ default: router }) => {
+                if (router.currentRoute.value.name !== 'login') {
+                    router.push({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+                }
+            })
         }
         return Promise.reject(error)
     }
 )
 
-/**
- * Convert a stored image value to a full URL.
- * Handles three cases:
- *   1. Already a full URL (http/https) — return as-is
- *   2. A relative storage path — prefix with Laravel's storage URL
- *   3. Empty / null — return null (caller renders fallback)
- */
 export function imageUrl(path) {
     if (!path) return null
     if (path.startsWith('http://') || path.startsWith('https://')) return path

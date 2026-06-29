@@ -82,7 +82,9 @@
       />
     </div>
 
+    <ToastNotification ref="toast" />
   </div>
+
 </template>
 
 <script setup>
@@ -90,94 +92,97 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api/axios'
 import { ShoppingCartIcon, ShoppingBagIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { useCartStore } from '@/stores/cart'
 
-import CartItemRow from '@/components/cart/CartItemRow.vue'
-import CartSummary from '@/components/cart/CartSummary.vue'
+import CartItemRow        from '@/components/cart/CartItemRow.vue'
+import CartSummary        from '@/components/cart/CartSummary.vue'
+import ToastNotification  from '@/components/common/Toastnotification.vue'
 
-const router = useRouter()
-const items  = ref([])
-const loading = ref(true)
+const router    = useRouter()
+const cartStore = useCartStore()
+const items     = ref([])
+const loading   = ref(true)
+const toast     = ref(null)
 const selectedIds = ref([])
 
 const allSelected = computed(() =>
-    items.value.length > 0 && selectedIds.value.length === items.value.length
+  items.value.length > 0 && selectedIds.value.length === items.value.length
 )
 
 const selectedItems = computed(() =>
-    items.value.filter(item => selectedIds.value.includes(item.id))
+  items.value.filter(item => selectedIds.value.includes(item.id))
 )
 
 const selectedTotal = computed(() =>
-    selectedItems.value.reduce(
-        (sum, item) => sum + Number(item.product?.price ?? 0) * item.quantity,
-        0
-    )
+  selectedItems.value.reduce(
+    (sum, item) => sum + Number(item.product?.price ?? 0) * item.quantity,
+    0
+  )
 )
 
 async function fetchCart() {
-    loading.value = true
-    try {
-        const res        = await api.get('/cart')
-        items.value      = res.data.items ?? []
-        // Auto-select all items on load
-        selectedIds.value = items.value.map(i => i.id)
-    } catch (e) {
-        console.error('Failed to load cart:', e)
-    } finally {
-        loading.value = false
-    }
+  loading.value = true
+  try {
+    const res         = await api.get('/cart')
+    items.value       = res.data.items ?? []
+    selectedIds.value = items.value.map(i => i.id)
+    cartStore.count   = items.value.length
+  } catch {
+    toast.value?.show('Failed to load cart.', 'error')
+  } finally {
+    loading.value = false
+  }
 }
 
 async function updateQty(item, newQty) {
-    if (newQty < 1) return
-    try {
-        await api.put(`/cart/${item.id}`, { quantity: newQty })
-        item.quantity = newQty
-    } catch (e) {
-        alert(e.response?.data?.message ?? 'Failed to update quantity.')
-    }
+  if (newQty < 1) return
+  try {
+    await api.put(`/cart/${item.id}`, { quantity: newQty })
+    item.quantity = newQty
+  } catch (e) {
+    toast.value?.show(e.response?.data?.message ?? 'Failed to update quantity.', 'error')
+  }
 }
 
 async function removeItem(id) {
-    try {
-        await api.delete(`/cart/${id}`)
-        items.value       = items.value.filter(i => i.id !== id)
-        selectedIds.value = selectedIds.value.filter(i => i !== id)
-    } catch (e) {
-        alert('Failed to remove item.')
-    }
+  try {
+    await api.delete(`/cart/${id}`)
+    items.value       = items.value.filter(i => i.id !== id)
+    selectedIds.value = selectedIds.value.filter(i => i !== id)
+    cartStore.count   = items.value.length
+    toast.value?.show('Item removed from cart.', 'success')
+  } catch {
+    toast.value?.show('Failed to remove item.', 'error')
+  }
 }
 
 async function removeSelected() {
-    const ids = [...selectedIds.value]
-    try {
-        await Promise.all(ids.map(id => api.delete(`/cart/${id}`)))
-        items.value       = items.value.filter(i => !ids.includes(i.id))
-        selectedIds.value = []
-    } catch (e) {
-        alert('Failed to remove selected items.')
-    }
+  const ids = [...selectedIds.value]
+  try {
+    await Promise.all(ids.map(id => api.delete(`/cart/${id}`)))
+    items.value       = items.value.filter(i => !ids.includes(i.id))
+    selectedIds.value = []
+    cartStore.count   = items.value.length
+    toast.value?.show(`${ids.length} item(s) removed.`, 'success')
+  } catch {
+    toast.value?.show('Failed to remove selected items.', 'error')
+  }
 }
 
 function toggleSelectItem(id) {
-    const idx = selectedIds.value.indexOf(id)
-    if (idx === -1) {
-        selectedIds.value.push(id)
-    } else {
-        selectedIds.value.splice(idx, 1)
-    }
+  const idx = selectedIds.value.indexOf(id)
+  if (idx === -1) selectedIds.value.push(id)
+  else selectedIds.value.splice(idx, 1)
 }
 
 function toggleSelectAll() {
-    selectedIds.value = allSelected.value
-        ? []
-        : items.value.map(i => i.id)
+  selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id)
 }
 
 function goCheckout() {
-    if (selectedIds.value.length > 0) {
-        router.push({ name: 'checkout' })
-    }
+  if (selectedIds.value.length > 0) {
+    router.push({ name: 'checkout' })
+  }
 }
 
 onMounted(fetchCart)

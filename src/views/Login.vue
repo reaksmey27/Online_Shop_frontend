@@ -130,11 +130,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ExclamationCircleIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import GoogleButton from '@/components/auth/GoogleButton.vue'
 
+const route  = useRoute()
 const router = useRouter()
 const auth   = useAuthStore()
 
@@ -153,7 +154,7 @@ async function handleLogin() {
     errors.value   = {}
     try {
         await auth.login(form)
-        router.push({ name: 'home' })
+        router.push(route.query.redirect ? String(route.query.redirect) : { name: 'home' })
     } catch (e) {
         if (e.response?.status === 422) {
             errors.value = e.response.data.errors ?? {}

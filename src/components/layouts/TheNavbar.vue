@@ -72,12 +72,20 @@
             </router-link>
             <router-link
               to="/cart"
-              class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors group"
+              class="relative p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors group"
               title="Cart"
             >
               <ShoppingCartIcon
                 class="w-5 h-5 group-hover:scale-105 transition-transform"
               />
+              <span
+                v-if="cartStore.count > 0"
+                class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-blue-600 text-white
+                       text-[10px] font-black rounded-full flex items-center justify-center px-1
+                       leading-none shadow-sm"
+              >
+                {{ cartStore.count > 99 ? '99+' : cartStore.count }}
+              </span>
             </router-link>
 
             <!-- User Dropdown -->
@@ -429,6 +437,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useCartStore } from "@/stores/cart";
 import api, { imageUrl } from "@/api/axios";
 import {
   ShoppingCartIcon,
@@ -450,6 +459,7 @@ import {
 } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
+const cartStore = useCartStore();
 const router = useRouter();
 const route = useRoute();
 
@@ -546,7 +556,23 @@ watch(
   },
 );
 
-onMounted(() => document.addEventListener("click", handleClickOutside));
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside)
+  // Fetch cart count if user is logged in
+  if (auth.isLoggedIn) {
+    cartStore.fetchCount()
+  }
+})
+
+// Re-fetch cart count whenever login state changes
+watch(() => auth.isLoggedIn, (loggedIn) => {
+  if (loggedIn) {
+    cartStore.fetchCount()
+  } else {
+    cartStore.reset()
+  }
+})
+
 onBeforeUnmount(() =>
   document.removeEventListener("click", handleClickOutside),
 );
