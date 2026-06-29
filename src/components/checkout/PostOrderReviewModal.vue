@@ -210,7 +210,7 @@
 import { ref, computed, watch } from 'vue'
 import { StarIcon, CheckCircleIcon, XMarkIcon, CubeIcon, ArrowRightIcon } from '@heroicons/vue/24/solid'
 import { imageUrl } from '@/api/axios'
-import api from '@/api/axios'
+import reviewService from '@/services/reviewService'
 
 const props = defineProps({
   show:     { type: Boolean, default: false },
@@ -280,7 +280,7 @@ async function submitReview() {
   submitting.value = true
   errorMsg.value   = ''
   try {
-    await api.post('/reviews', {
+    await reviewService.submitReview({
       product_id: currentProduct.value.id,
       rating:     form.value.rating,
       comment:    form.value.comment || undefined,

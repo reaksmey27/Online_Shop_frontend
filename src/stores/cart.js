@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '@/api/axios'
+import cartService from '@/services/cartService'
 
 export const useCartStore = defineStore('cart', () => {
     const count = ref(0)
 
     async function fetchCount() {
         try {
-            const res = await api.get('/cart')
-            count.value = (res.data.items ?? []).length
+            const data  = await cartService.getCart()
+            count.value = (data.items ?? []).length
         } catch {
             count.value = 0
         }

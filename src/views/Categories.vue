@@ -76,7 +76,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api, { imageUrl } from '@/api/axios'
+import { imageUrl } from '@/api/axios'
+import productService from '@/services/productService'
 import {
     Squares2X2Icon,
     TagIcon,
@@ -89,8 +90,8 @@ const loading    = ref(true)
 async function fetchCategories() {
     loading.value = true
     try {
-        const res        = await api.get('/categories')
-        categories.value = res.data
+        const data       = await productService.getCategories()
+        categories.value = data ?? []
     } catch (e) {
         console.error('Failed to load categories:', e)
     } finally {

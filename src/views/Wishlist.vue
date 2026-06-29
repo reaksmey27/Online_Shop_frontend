@@ -108,7 +108,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api, { imageUrl } from '@/api/axios'
+import { imageUrl } from '@/api/axios'
+import wishlistService from '@/services/wishlistService'
+import cartService from '@/services/cartService'
 import {
     HeartIcon,
     ShoppingBagIcon,
@@ -132,8 +134,8 @@ function showToast(message, type = 'success') {
 async function fetchWishlist() {
     loading.value = true
     try {
-        const res   = await api.get('/wishlist')
-        items.value = res.data
+        const data  = await wishlistService.getWishlist()
+        items.value = data ?? []
     } catch (e) {
         console.error('Failed to load wishlist:', e)
     } finally {
@@ -143,7 +145,7 @@ async function fetchWishlist() {
 
 async function removeFromWishlist(id) {
     try {
-        await api.delete(`/wishlist/${id}`)
+        await wishlistService.removeItem(id)
         items.value = items.value.filter(i => i.id !== id)
         showToast('Removed from wishlist')
     } catch (e) {
@@ -154,7 +156,7 @@ async function removeFromWishlist(id) {
 async function addToCart(product) {
     if (!product) return
     try {
-        await api.post('/cart', { product_id: product.id, quantity: 1 })
+        await cartService.addItem(product.id, 1)
         showToast(`"${product.name}" added to cart!`)
     } catch (e) {
         showToast(e.response?.data?.message ?? 'Failed to add to cart', 'error')

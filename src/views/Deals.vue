@@ -166,7 +166,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ToastNotification from '@/components/common/ToastNotification.vue'
-import api, { imageUrl } from '@/api/axios'
+import { imageUrl } from '@/api/axios'
+import productService from '@/services/productService'
+import cartService from '@/services/cartService'
 import {
     BoltIcon,
     ShoppingCartIcon,
@@ -234,18 +236,16 @@ async function fetchDeals() {
     loading.value = true
     try {
         const { sort, order } = getSortParams()
-        const res = await api.get('/products', {
-            params: {
+        const data = await productService.getProducts({
                 page:     currentPage.value,
                 per_page: 12,
                 sort,
                 order,
-            }
-        })
-        products.value    = res.data.data
-        total.value       = res.data.total
-        currentPage.value = res.data.current_page
-        lastPage.value    = res.data.last_page
+            })
+        products.value    = data.data
+        total.value       = data.total
+        currentPage.value = data.current_page
+        lastPage.value    = data.last_page
     } catch (e) {
         console.error('Failed to load deals:', e)
     } finally {
@@ -266,7 +266,7 @@ async function addToCart(product) {
         return
     }
     try {
-        await api.post('/cart', { product_id: product.id, quantity: 1 })
+        await cartService.addItem(product.id, 1)
         toast.value.show(`"${product.name}" added to cart!`)
     } catch (e) {
         toast.value.show(e.response?.data?.message ?? 'Failed to add to cart.', 'error')

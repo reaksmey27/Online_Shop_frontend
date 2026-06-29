@@ -257,7 +257,9 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import api, { imageUrl } from "@/api/axios";
+import { imageUrl } from "@/api/axios";
+import productService from "@/services/productService";
+import cartService from "@/services/cartService";
 import {
   MagnifyingGlassIcon,
   ShoppingCartIcon,
@@ -333,11 +335,11 @@ async function fetchResults() {
     };
     if (selectedCategory.value) params.category_id = selectedCategory.value;
 
-    const res = await api.get("/products", { params });
-    products.value = res.data.data;
-    total.value = res.data.total;
-    currentPage.value = res.data.current_page;
-    lastPage.value = res.data.last_page;
+    const data = await productService.getProducts(params);
+    products.value = data.data ?? [];
+    total.value = data.total ?? 0;
+    currentPage.value = data.current_page ?? 1;
+    lastPage.value = data.last_page ?? 1;
   } catch (e) {
     console.error("Search failed:", e);
   } finally {
@@ -358,7 +360,7 @@ async function addToCart(product) {
     return;
   }
   try {
-    await api.post("/cart", { product_id: product.id, quantity: 1 });
+    await cartService.addItem(product.id, 1);
     toast.value?.show(`"${product.name}" added to cart!`, 'success');
   } catch (e) {
     toast.value?.show(e.response?.data?.message ?? "Failed to add to cart.", 'error');

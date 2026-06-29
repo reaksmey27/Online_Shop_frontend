@@ -438,7 +438,8 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useCartStore } from "@/stores/cart";
-import api, { imageUrl } from "@/api/axios";
+import { imageUrl } from "@/api/axios"
+import productService from "@/services/productService";
 import {
   ShoppingCartIcon,
   HeartIcon,
@@ -513,8 +514,8 @@ async function fetchCategories() {
   if (categories.value.length) return; // already loaded
   loadingCategories.value = true;
   try {
-    const res = await api.get("/categories");
-    categories.value = res.data;
+    const data = await productService.getCategories();
+    categories.value = data ?? [];
   } catch (e) {
     console.error("Failed to load categories:", e);
   } finally {

@@ -1,5 +1,4 @@
 <template>
-  <div>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <div class="mb-8">
@@ -14,53 +13,51 @@
     </div>
 
     <!-- Empty Cart -->
-    <div v-else-if="cartItems.length === 0 && !orderSuccess"
-         class="text-center py-20 border border-dashed border-gray-200 rounded-3xl bg-white">
+    <div
+      v-else-if="cartItems.length === 0 && !orderSuccess"
+      class="text-center py-20 border border-dashed border-gray-200 rounded-3xl bg-white"
+    >
       <ShoppingCartIcon class="w-16 h-16 text-gray-200 mx-auto mb-4 stroke-[1.2]" />
       <h3 class="font-black text-gray-700">Your cart is empty</h3>
-      <router-link to="/products"
-        class="mt-4 inline-flex items-center gap-2 text-blue-600 text-sm hover:underline">
+      <router-link to="/products" class="mt-4 inline-flex items-center gap-2 text-blue-600 text-sm hover:underline">
         Browse products
       </router-link>
     </div>
 
+    <!-- Checkout Content -->
     <div v-else class="flex flex-col lg:flex-row gap-8 items-start">
 
       <!-- Left: Form -->
       <div class="flex-1 w-full space-y-6">
 
         <!-- Order Success -->
-        <!-- Order Success -->
         <div v-if="orderSuccess" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-8 text-center">
           <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircleIcon class="w-9 h-9 text-emerald-500" />
           </div>
-          <h3 class="font-black text-emerald-900 text-xl tracking-tight">
-            Order Placed Successfully!
-          </h3>
-          <p class="text-emerald-600 text-sm mt-2">
-            Your order has been confirmed and is being processed.
-          </p>
+          <h3 class="font-black text-emerald-900 text-xl tracking-tight">Order Placed Successfully!</h3>
+          <p class="text-emerald-600 text-sm mt-2">Your order has been confirmed and is being processed.</p>
           <div class="flex gap-3 justify-center mt-6">
-            <router-link to="/orders"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl
-                     text-sm font-bold transition-colors shadow-sm">
+            <router-link
+              to="/orders"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
+            >
               View My Orders
             </router-link>
-            <router-link to="/products"
-              class="border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-6 py-2.5
-                     rounded-xl text-sm font-bold transition-colors">
+            <router-link
+              to="/products"
+              class="border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-6 py-2.5 rounded-xl text-sm font-bold transition-colors"
+            >
               Continue Shopping
             </router-link>
           </div>
         </div>
 
+        <!-- Form Fields -->
         <template v-else>
 
           <!-- Error Alert -->
-          <div v-if="errorMsg"
-               class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700
-                      flex items-start gap-2">
+          <div v-if="errorMsg" class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-start gap-2">
             <ExclamationCircleIcon class="w-4 h-4 flex-shrink-0 mt-0.5" />
             {{ errorMsg }}
           </div>
@@ -75,14 +72,12 @@
               v-model="form.shipping_address"
               rows="3"
               placeholder="Enter your full shipping address..."
-              class="w-full px-4 py-3 border rounded-xl text-sm outline-none
-                     focus:ring-2 transition-colors resize-none"
+              class="w-full px-4 py-3 border rounded-xl text-sm outline-none focus:ring-2 transition-colors resize-none"
               :class="errors.shipping_address
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
-                : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'" />
-            <p v-if="errors.shipping_address" class="text-red-500 text-xs mt-1.5">
-              {{ errors.shipping_address }}
-            </p>
+                : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'"
+            />
+            <p v-if="errors.shipping_address" class="text-red-500 text-xs mt-1.5">{{ errors.shipping_address }}</p>
           </div>
 
           <!-- Payment Method -->
@@ -93,27 +88,29 @@
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
-                v-for="method in paymentMethods" :key="method.value"
+                v-for="method in paymentMethods"
+                :key="method.value"
                 type="button"
                 @click="form.payment_method = method.value"
-                class="flex items-center gap-3 px-4 py-3 rounded-xl border-2
-                       transition-all text-left"
+                class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left"
                 :class="form.payment_method === method.value
                   ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'">
-                <component :is="method.icon" class="w-5 h-5 flex-shrink-0"
-                           :class="form.payment_method === method.value
-                             ? 'text-blue-600' : 'text-gray-400'" />
-                <span class="font-semibold text-sm"
-                      :class="form.payment_method === method.value
-                        ? 'text-blue-700' : 'text-gray-700'">
+                  : 'border-gray-200 hover:border-gray-300 bg-white'"
+              >
+                <component
+                  :is="method.icon"
+                  class="w-5 h-5 flex-shrink-0"
+                  :class="form.payment_method === method.value ? 'text-blue-600' : 'text-gray-400'"
+                />
+                <span
+                  class="font-semibold text-sm"
+                  :class="form.payment_method === method.value ? 'text-blue-700' : 'text-gray-700'"
+                >
                   {{ method.label }}
                 </span>
               </button>
             </div>
-            <p v-if="errors.payment_method" class="text-red-500 text-xs mt-2">
-              {{ errors.payment_method }}
-            </p>
+            <p v-if="errors.payment_method" class="text-red-500 text-xs mt-2">{{ errors.payment_method }}</p>
           </div>
 
           <!-- Order Notes -->
@@ -127,25 +124,21 @@
               v-model="form.order_notes"
               rows="2"
               placeholder="Special instructions, delivery notes..."
-              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none
-                     focus:ring-2 focus:border-blue-500 focus:ring-blue-100 transition-colors resize-none"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-100 transition-colors resize-none"
             />
           </div>
 
-          <!-- Place Order — mobile only -->
+          <!-- Place Order — mobile -->
           <button
             type="button"
             @click="placeOrder"
             :disabled="submitting"
-            class="lg:hidden w-full py-3.5 rounded-xl font-black text-sm text-white
-                   uppercase tracking-wider transition-all flex items-center
-                   justify-center gap-2 shadow-md active:scale-[0.99]"
-            :class="submitting
-              ? 'bg-blue-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'">
+            class="lg:hidden w-full py-3.5 rounded-xl font-black text-sm text-white uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md active:scale-[0.99]"
+            :class="submitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'"
+          >
             <svg v-if="submitting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <LockClosedIcon v-else class="w-4 h-4 stroke-[2.5]" />
             {{ submitting ? 'Placing Order...' : `Place Order · $${grandTotal.toFixed(2)}` }}
@@ -162,21 +155,19 @@
 
           <!-- Items -->
           <div class="space-y-3 max-h-56 overflow-y-auto pr-1">
-            <div v-for="item in cartItems" :key="item.id"
-                 class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100
-                          flex-shrink-0 flex items-center justify-center overflow-hidden">
-                <img v-if="item.product?.image"
-                     :src="imageUrl(item.product.image)"
-                     :alt="item.product?.name"
-                     class="w-full h-full object-cover"
-                     @error="e => e.target.style.opacity = '0'">
+            <div v-for="item in cartItems" :key="item.id" class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <img
+                  v-if="item.product?.image"
+                  :src="imageUrl(item.product.image)"
+                  :alt="item.product?.name"
+                  class="w-full h-full object-cover"
+                  @error="e => e.target.style.opacity = '0'"
+                >
                 <CubeIcon v-else class="w-5 h-5 text-gray-300" />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold text-gray-800 line-clamp-1">
-                  {{ item.product?.name }}
-                </p>
+                <p class="text-xs font-bold text-gray-800 line-clamp-1">{{ item.product?.name }}</p>
                 <p class="text-xs text-gray-400 mt-0.5">× {{ item.quantity }}</p>
               </div>
               <p class="text-xs font-black text-gray-900 flex-shrink-0">
@@ -197,34 +188,32 @@
                 {{ isFreeShipping ? 'Free' : '$5.00' }}
               </span>
             </div>
-            <div class="flex justify-between font-black text-gray-900 text-lg
-                        pt-3 border-t border-gray-100">
+            <div class="flex justify-between font-black text-gray-900 text-lg pt-3 border-t border-gray-100">
               <span>Total</span>
               <span class="text-blue-600">${{ grandTotal.toFixed(2) }}</span>
             </div>
           </div>
 
           <!-- Free shipping nudge -->
-          <div v-if="subtotal > 0 && subtotal < 50"
-               class="mt-4 bg-blue-50 rounded-xl p-3 text-xs text-blue-700 text-center font-medium">
+          <div
+            v-if="subtotal > 0 && subtotal < 50"
+            class="mt-4 bg-blue-50 rounded-xl p-3 text-xs text-blue-700 text-center font-medium"
+          >
             Add ${{ (50 - subtotal).toFixed(2) }} more for free shipping!
           </div>
 
-          <!-- Place Order — desktop only -->
+          <!-- Place Order — desktop -->
           <button
             v-if="!orderSuccess"
             type="button"
             @click="placeOrder"
             :disabled="submitting"
-            class="hidden lg:flex mt-5 w-full py-3.5 rounded-xl font-black text-sm
-                   text-white uppercase tracking-wider transition-all items-center
-                   justify-center gap-2 shadow-md active:scale-[0.99]"
-            :class="submitting
-              ? 'bg-blue-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'">
+            class="hidden lg:flex mt-5 w-full py-3.5 rounded-xl font-black text-sm text-white uppercase tracking-wider transition-all items-center justify-center gap-2 shadow-md active:scale-[0.99]"
+            :class="submitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'"
+          >
             <svg v-if="submitting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <LockClosedIcon v-else class="w-4 h-4 stroke-[2.5]" />
             {{ submitting ? 'Placing Order...' : 'Place Order' }}
@@ -234,125 +223,126 @@
       </div>
 
     </div>
+    <!-- Post-order Review Modal -->
+    <PostOrderReviewModal
+      :show="showReviewModal"
+      :products="orderedProducts"
+      @close="showReviewModal = false"
+    />
   </div>
 
-  <!-- Post-order Review Modal -->
-  <PostOrderReviewModal
-    :show="showReviewModal"
-    :products="orderedProducts"
-    @close="showReviewModal = false"
-  />
-  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import api, { imageUrl } from '@/api/axios'
+import { imageUrl } from '@/api/axios'
+import cartService from '@/services/cartService'
+import orderService from '@/services/orderService'
 import {
-    ShoppingCartIcon,
-    CheckCircleIcon,
-    ExclamationCircleIcon,
-    MapPinIcon,
-    CreditCardIcon,
-    LockClosedIcon,
-    CubeIcon,
-    BanknotesIcon,
-    DevicePhoneMobileIcon,
-    PencilSquareIcon,
+  ShoppingCartIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  MapPinIcon,
+  CreditCardIcon,
+  LockClosedIcon,
+  CubeIcon,
+  BanknotesIcon,
+  DevicePhoneMobileIcon,
+  PencilSquareIcon,
 } from '@heroicons/vue/24/outline'
 import { useCartStore } from '@/stores/cart'
-
 import PostOrderReviewModal from '@/components/checkout/PostOrderReviewModal.vue'
 
+// ── Store ─────────────────────────────────────────────────────────────────────
 const cartStore = useCartStore()
 
-const cartItems     = ref([])
-const loading       = ref(true)
-const submitting    = ref(false)
-const orderSuccess  = ref(false)
-const errorMsg      = ref('')
-const errors        = ref({})
+// ── State ─────────────────────────────────────────────────────────────────────
+const cartItems       = ref([])
+const loading         = ref(true)
+const submitting      = ref(false)
+const orderSuccess    = ref(false)
+const errorMsg        = ref('')
+const errors          = ref({})
 const showReviewModal = ref(false)
 const orderedProducts = ref([])
 
-function skipReview() {}
-
 const form = ref({
-    shipping_address: '',
-    payment_method:   'cash',
-    order_notes:      '',
+  shipping_address: '',
+  payment_method:   'cash',
+  order_notes:      '',
 })
 
 const paymentMethods = [
-    { value: 'cash',   label: 'Cash on Delivery', icon: BanknotesIcon },
-    { value: 'card',   label: 'Credit / Debit',   icon: CreditCardIcon },
-    { value: 'mobile', label: 'Mobile Pay',        icon: DevicePhoneMobileIcon },
+  { value: 'cash',   label: 'Cash on Delivery', icon: BanknotesIcon },
+  { value: 'card',   label: 'Credit / Debit',   icon: CreditCardIcon },
+  { value: 'mobile', label: 'Mobile Pay',        icon: DevicePhoneMobileIcon },
 ]
 
+// ── Computed ──────────────────────────────────────────────────────────────────
 const subtotal = computed(() =>
-    cartItems.value.reduce(
-        (sum, i) => sum + Number(i.product?.price ?? 0) * i.quantity, 0
-    )
+  cartItems.value.reduce((sum, i) => sum + Number(i.product?.price ?? 0) * i.quantity, 0)
 )
 
 const isFreeShipping = computed(() => subtotal.value >= 50)
 
 const grandTotal = computed(() =>
-    subtotal.value + (isFreeShipping.value || subtotal.value === 0 ? 0 : 5)
+  subtotal.value + (isFreeShipping.value || subtotal.value === 0 ? 0 : 5)
 )
 
+// ── Methods ───────────────────────────────────────────────────────────────────
 async function fetchCart() {
-    loading.value = true
-    try {
-        const res       = await api.get('/cart')
-        cartItems.value = res.data.items ?? []
-    } catch (e) {
-        console.error('Failed to load cart:', e)
-    } finally {
-        loading.value = false
-    }
+  loading.value = true
+  try {
+    const data = await cartService.getCart()
+    cartItems.value = data.items ?? []
+  } catch (e) {
+    console.error('Failed to load cart:', e)
+  } finally {
+    loading.value = false
+  }
 }
 
 function validate() {
-    errors.value = {}
-    if (!form.value.shipping_address.trim()) {
-        errors.value.shipping_address = 'Shipping address is required.'
-    }
-    if (!form.value.payment_method) {
-        errors.value.payment_method = 'Please select a payment method.'
-    }
-    return Object.keys(errors.value).length === 0
+  errors.value = {}
+  if (!form.value.shipping_address.trim()) {
+    errors.value.shipping_address = 'Shipping address is required.'
+  }
+  if (!form.value.payment_method) {
+    errors.value.payment_method = 'Please select a payment method.'
+  }
+  return Object.keys(errors.value).length === 0
 }
 
 async function placeOrder() {
-    if (!validate()) return
-    submitting.value = true
-    errorMsg.value   = ''
+  if (!validate()) return
 
-    const productsForReview = cartItems.value
-        .map(i => i.product)
-        .filter(Boolean)
+  submitting.value = true
+  errorMsg.value   = ''
 
-    try {
-        await api.post('/orders/checkout', {
-            shipping_address: form.value.shipping_address,
-            payment_method:   form.value.payment_method,
-            order_notes:      form.value.order_notes || undefined,
-        })
-        orderedProducts.value = productsForReview
-        orderSuccess.value    = true
-        cartItems.value       = []
-        cartStore.reset()
+  const productsForReview = cartItems.value.map(i => i.product).filter(Boolean)
 
-        // Show review modal after success banner is visible
-        setTimeout(() => { showReviewModal.value = true }, 900)
-    } catch (e) {
-        errorMsg.value =
-            e.response?.data?.message ?? 'Failed to place order. Please try again.'
-    } finally {
-        submitting.value = false
-    }
+  try {
+    await orderService.checkout({
+      shipping_address: form.value.shipping_address,
+      payment_method:   form.value.payment_method,
+      order_notes:      form.value.order_notes || undefined,
+    })
+
+    orderedProducts.value = productsForReview
+    orderSuccess.value    = true
+    cartItems.value       = []
+    cartStore.reset()
+
+    // Show review modal shortly after success banner appears
+    setTimeout(() => { showReviewModal.value = true }, 900)
+
+  } catch (e) {
+    errorMsg.value = e.response?.data?.message ?? 'Failed to place order. Please try again.'
+  } finally {
+    submitting.value = false
+  }
 }
 
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(fetchCart)
 </script>

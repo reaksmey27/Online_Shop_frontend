@@ -90,7 +90,11 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
-import api from '@/api/axios'
+import cartService    from '@/services/cartService'
+import productService from '@/services/productService'
+import wishlistService from '@/services/wishlistService'
+import orderService   from '@/services/orderService'
+import reviewService  from '@/services/reviewService'
 import { CubeIcon } from '@heroicons/vue/24/outline'
 
 import ProductMedia       from '@/components/products/detail/ProductMedia.vue'
@@ -128,14 +132,14 @@ async function fetchProduct() {
   loading.value = true
   try {
     const [productRes, reviewsRes] = await Promise.all([
-      api.get(`/products/${route.params.id}`),
-      api.get(`/products/${route.params.id}/reviews`),
+      productService.getProduct(route.params.id),
+      reviewService.getReviews(route.params.id),
     ])
 
     if (!isMounted) return
 
-    product.value    = productRes.data
-    reviewData.value = reviewsRes.data
+    product.value    = productRes
+    reviewData.value = reviewsRes
   } catch {
     if (isMounted) product.value = null
   } finally {
@@ -144,16 +148,16 @@ async function fetchProduct() {
 
   // Safe execution checks for background requests
   if (auth.isLoggedIn && product.value) {
-    api.get('/wishlist').then(res => {
+    wishlistService.getWishlist().then(data => {
       if (!isMounted || !product.value) return
-      const match = (res.data ?? []).find(w => w.product_id === product.value.id)
+      const match = (data ?? []).find(w => w.product_id === product.value.id)
       inWishlist.value     = !!match
       wishlistItemId.value = match?.id ?? null
     }).catch(() => {})
 
-    api.get('/orders').then(res => {
+    orderService.getOrders().then(data => {
       if (!isMounted || !product.value) return
-      const hasDelivered = (res.data ?? []).some(order =>
+      const hasDelivered = (data ?? []).some(order =>
         ['delivered', 'completed'].includes(order.status) &&
         order.items?.some(item => item.product_id === product.value.id)
       )
@@ -165,9 +169,9 @@ async function fetchProduct() {
   }
 
   if (product.value) {
-    api.get(`/products/${route.params.id}/related`).then(r => {
+    productService.getRelated(route.params.id).then(data => {
       if (!isMounted) return
-      relatedProducts.value = r.data ?? []
+      relatedProducts.value = data ?? []
     }).catch(() => {})
   }
 }
@@ -188,10 +192,7 @@ async function addToCart() {
   cartLoading.value = true
   successMsg.value  = ''
   try {
-    await api.post('/cart', {
-      product_id: product.value.id,
-      quantity:   qty.value,
-    })
+    await cartService.addItem(product.value.id, qty.value)
     cartStore.increment(qty.value)
     successMsg.value = `${qty.value} item(s) added to your cart!`
     toast.value?.show(`${qty.value} item(s) added to cart!`, 'success')
@@ -210,14 +211,14 @@ async function toggleWishlist() {
   }
   try {
     if (inWishlist.value) {
-      await api.delete(`/wishlist/${wishlistItemId.value}`)
+      await wishlistService.removeItem(wishlistItemId.value)
       inWishlist.value     = false
       wishlistItemId.value = null
       toast.value?.show('Removed from wishlist', 'success')
     } else {
-      const res            = await api.post('/wishlist', { product_id: product.value.id })
+      const data           = await wishlistService.addItem(product.value.id)
       inWishlist.value     = true
-      wishlistItemId.value = res.data.item?.id ?? null
+      wishlistItemId.value = data.item?.id ?? null
       toast.value?.show('Added to wishlist', 'success')
     }
   } catch (e) {
@@ -231,7 +232,7 @@ async function submitReview() {
   reviewError.value   = ''
   reviewSuccess.value = false
   try {
-    await api.post('/reviews', {
+    await reviewService.submitReview({
       product_id: product.value.id,
       rating:     reviewForm.value.rating,
       title:      reviewForm.value.title,
@@ -251,7 +252,7 @@ async function submitReview() {
 async function addRelatedToCart(p) {
   if (!auth.isLoggedIn) { router.push({ name: 'login' }); return }
   try {
-    await api.post('/cart', { product_id: p.id, quantity: 1 })
+    await cartService.addItem(p.id, 1)
     cartStore.increment(1)
     toast.value?.show(`"${p.name}" added to cart!`, 'success')
   } catch (e) {

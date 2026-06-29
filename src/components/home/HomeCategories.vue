@@ -48,7 +48,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api, { imageUrl } from '@/api/axios'
+import { imageUrl } from '@/api/axios'
+import productService from '@/services/productService'
 import { ChevronRightIcon, RectangleGroupIcon } from '@heroicons/vue/24/outline'
 
 const categories = ref([])
@@ -56,8 +57,8 @@ const loading = ref(true)
 
 async function fetchCategories() {
   try {
-    const res = await api.get('/categories')
-    categories.value = (res.data || []).slice(0, 8)
+    const data = await productService.getCategories()
+    categories.value = (data ?? []).slice(0, 8)
   } catch (e) {
     console.error(e)
   } finally {

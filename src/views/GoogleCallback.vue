@@ -52,7 +52,7 @@ onMounted(async () => {
 
     try {
         await auth.googleCallback(code)
-        // Redirect to homepage or the page the user was trying to visit
+        
         const redirect = route.query.state ?? '/'
         router.push(redirect)
     } catch (e) {

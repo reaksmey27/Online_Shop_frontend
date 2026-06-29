@@ -193,7 +193,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/api/axios'
+import profileService from '@/services/profileService'
 import {
     UserIcon,
     LockClosedIcon,
@@ -235,13 +235,13 @@ async function updateProfile() {
     profileSuccess.value = false
     profileError.value   = ''
     try {
-        const res = await api.put('/profile', {
+        const data = await profileService.updateProfile({
             name:  profileForm.name,
             email: profileForm.email,
         })
         // Update the Pinia store so the navbar reflects the change
-        auth.user = res.data.user
-        localStorage.setItem('user', JSON.stringify(res.data.user))
+        auth.user = data.user
+        localStorage.setItem('user', JSON.stringify(data.user))
         profileSuccess.value = true
         setTimeout(() => (profileSuccess.value = false), 3000)
     } catch (e) {
@@ -259,7 +259,7 @@ async function changePassword() {
     passwordSuccess.value = false
     passwordError.value   = ''
     try {
-        await api.put('/profile/password', {
+        await profileService.updatePassword({
             current_password:      passwordForm.current_password,
             password:              passwordForm.password,
             password_confirmation: passwordForm.password_confirmation,

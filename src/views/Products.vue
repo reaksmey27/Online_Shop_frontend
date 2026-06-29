@@ -130,7 +130,8 @@ import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ToastNotification from '@/components/common/ToastNotification.vue'
-import api from '@/api/axios'
+import productService from '@/services/productService'
+import cartService from '@/services/cartService'
 import { CubeIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/vue/24/outline'
 
 import ProductCard     from '@/components/products/ProductCard.vue'
@@ -195,11 +196,11 @@ async function fetchProducts() {
       },
     })
 
-    const res         = await api.get('/products', { params })
-    products.value    = res.data.data
-    total.value       = res.data.total
-    currentPage.value = res.data.current_page
-    lastPage.value    = res.data.last_page
+    const data        = await productService.getProducts(params)
+    products.value    = data.data ?? []
+    total.value       = data.total ?? 0
+    currentPage.value = data.current_page ?? 1
+    lastPage.value    = data.last_page ?? 1
   } catch (e) {
     console.error('Failed to fetch products:', e)
   } finally {
@@ -209,8 +210,8 @@ async function fetchProducts() {
 
 async function fetchCategories() {
   try {
-    const res        = await api.get('/categories')
-    categories.value = res.data
+    const data       = await productService.getCategories()
+    categories.value = data ?? []
   } catch (e) {
     console.error('Failed to fetch categories:', e)
   }
@@ -252,7 +253,7 @@ async function addToCart(product) {
     return
   }
   try {
-    await api.post('/cart', { product_id: product.id, quantity: 1 })
+    await cartService.addItem(product.id, 1)
     toast.value.show(`"${product.name}" added to cart!`)
   } catch (e) {
     toast.value.show(e.response?.data?.message ?? 'Failed to add to cart.', 'error')

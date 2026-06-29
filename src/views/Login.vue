@@ -172,7 +172,6 @@ async function handleGoogleLogin() {
     googleLoading.value = true
     errorMsg.value      = ''
     try {
-        // Redirects to Google — page will leave, so no finally needed
         await auth.loginWithGoogle()
     } catch (e) {
         errorMsg.value      = 'Could not connect to Google. Please try again.'

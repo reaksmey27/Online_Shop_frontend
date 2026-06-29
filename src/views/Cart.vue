@@ -90,7 +90,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/api/axios'
+import cartService from '@/services/cartService'
 import { ShoppingCartIcon, ShoppingBagIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useCartStore } from '@/stores/cart'
 
@@ -123,8 +123,8 @@ const selectedTotal = computed(() =>
 async function fetchCart() {
   loading.value = true
   try {
-    const res         = await api.get('/cart')
-    items.value       = res.data.items ?? []
+    const data        = await cartService.getCart()
+    items.value       = data.items ?? []
     selectedIds.value = items.value.map(i => i.id)
     cartStore.count   = items.value.length
   } catch {
@@ -137,7 +137,7 @@ async function fetchCart() {
 async function updateQty(item, newQty) {
   if (newQty < 1) return
   try {
-    await api.put(`/cart/${item.id}`, { quantity: newQty })
+    await cartService.updateItem(item.id, newQty)
     item.quantity = newQty
   } catch (e) {
     toast.value?.show(e.response?.data?.message ?? 'Failed to update quantity.', 'error')
@@ -146,7 +146,7 @@ async function updateQty(item, newQty) {
 
 async function removeItem(id) {
   try {
-    await api.delete(`/cart/${id}`)
+    await cartService.removeItem(id)
     items.value       = items.value.filter(i => i.id !== id)
     selectedIds.value = selectedIds.value.filter(i => i !== id)
     cartStore.count   = items.value.length
@@ -159,7 +159,7 @@ async function removeItem(id) {
 async function removeSelected() {
   const ids = [...selectedIds.value]
   try {
-    await Promise.all(ids.map(id => api.delete(`/cart/${id}`)))
+    await cartService.removeItems(ids)
     items.value       = items.value.filter(i => !ids.includes(i.id))
     selectedIds.value = []
     cartStore.count   = items.value.length

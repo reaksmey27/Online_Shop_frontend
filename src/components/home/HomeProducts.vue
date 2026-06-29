@@ -105,7 +105,9 @@
 import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
-import api, { imageUrl } from "@/api/axios"
+import { imageUrl } from "@/api/axios"
+import productService from "@/services/productService"
+import cartService from "@/services/cartService"
 import {
   ChevronRightIcon,
   CubeIcon,
@@ -130,8 +132,8 @@ function getProductImage(product) {
 
 async function fetchProducts() {
   try {
-    const res = await api.get("/products?per_page=8");
-    products.value = res.data.data ?? res.data ?? [];
+    const data = await productService.getProducts({ per_page: 8 });
+    products.value = data.data ?? [];
   } catch (e) {
     console.error(e);
   } finally {
@@ -145,7 +147,7 @@ async function addToCart(product) {
     return;
   }
   try {
-    await api.post("/cart", { product_id: product.id, quantity: 1 });
+    await cartService.addItem(product.id, 1);
     // Emit a custom event for parent/global toast if needed; at minimum don't block with alert
     console.log(`"${product.name}" added to cart.`);
   } catch (e) {

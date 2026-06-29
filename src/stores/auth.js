@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '@/api/axios'
+import authService from '@/services/authService'
 
 export const useAuthStore = defineStore('auth', () => {
 
@@ -14,20 +14,20 @@ export const useAuthStore = defineStore('auth', () => {
     // ── Actions ──────────────────────────────────────────
 
     async function register(form) {
-        const res = await api.post('/register', form)
-        _setAuth(res.data)
-        return res.data
+        const data = await authService.register(form)
+        _setAuth(data)
+        return data
     }
 
     async function login(form) {
-        const res = await api.post('/login', form)
-        _setAuth(res.data)
-        return res.data
+        const data = await authService.login(form)
+        _setAuth(data)
+        return data
     }
 
     async function logout() {
         try {
-            await api.post('/logout')
+            await authService.logout()
         } catch {
             // Ignore errors — still clear local auth state
         } finally {
@@ -36,29 +36,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function fetchUser() {
-        const res  = await api.get('/me')
-        user.value = res.data
-        localStorage.setItem('user', JSON.stringify(res.data))
-        return res.data
+        const data = await authService.me()
+        user.value = data
+        localStorage.setItem('user', JSON.stringify(data))
+        return data
     }
 
-    /**
-     * Get the Google OAuth redirect URL from the backend
-     * then open it so the user can authenticate with Google.
-     */
+    /** Get the Google OAuth redirect URL then redirect the browser */
     async function loginWithGoogle() {
-        const res = await api.get('/auth/google/url')
-        window.location.href = res.data.url
+        const data = await authService.googleAuthUrl()
+        window.location.href = data.url
     }
 
-    /**
-     * Called on the /auth/google/callback page.
-     * Sends the authorization code to our backend to exchange for a token.
-     */
+    /** Called on the /auth/google/callback page */
     async function googleCallback(code) {
-        const res = await api.get('/auth/google/callback', { params: { code } })
-        _setAuth(res.data)
-        return res.data
+        const data = await authService.googleCallback(code)
+        _setAuth(data)
+        return data
     }
 
     // ── Private helpers ───────────────────────────────────
