@@ -30,28 +30,41 @@
       <!-- Left: Form -->
       <div class="flex-1 w-full space-y-6">
 
-        <!-- Order Success -->
-        <div v-if="orderSuccess" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-8 text-center">
-          <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircleIcon class="w-9 h-9 text-emerald-500" />
+        <template v-if="orderSuccess || redirectingToPayway">
+
+          <!-- Redirecting to ABA PayWay -->
+          <div v-if="redirectingToPayway" class="bg-blue-50 border border-blue-100 rounded-2xl p-8 text-center">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <QrCodeIcon class="w-9 h-9 text-blue-500 animate-pulse" />
+            </div>
+            <h3 class="font-black text-blue-900 text-xl tracking-tight">Redirecting to ABA PayWay…</h3>
+            <p class="text-blue-600 text-sm mt-2">Complete your payment in the window that opens. Don't close this page.</p>
           </div>
-          <h3 class="font-black text-emerald-900 text-xl tracking-tight">Order Placed Successfully!</h3>
-          <p class="text-emerald-600 text-sm mt-2">Your order has been confirmed and is being processed.</p>
-          <div class="flex gap-3 justify-center mt-6">
-            <router-link
-              to="/orders"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
-            >
-              View My Orders
-            </router-link>
-            <router-link
-              to="/products"
-              class="border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-6 py-2.5 rounded-xl text-sm font-bold transition-colors"
-            >
-              Continue Shopping
-            </router-link>
+
+          <!-- Order Success -->
+          <div v-else class="bg-emerald-50 border border-emerald-100 rounded-2xl p-8 text-center">
+            <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircleIcon class="w-9 h-9 text-emerald-500" />
+            </div>
+            <h3 class="font-black text-emerald-900 text-xl tracking-tight">Order Placed Successfully!</h3>
+            <p class="text-emerald-600 text-sm mt-2">Your order has been confirmed and is being processed.</p>
+            <div class="flex gap-3 justify-center mt-6">
+              <router-link
+                to="/orders"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
+              >
+                View My Orders
+              </router-link>
+              <router-link
+                to="/products"
+                class="border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-6 py-2.5 rounded-xl text-sm font-bold transition-colors"
+              >
+                Continue Shopping
+              </router-link>
+            </div>
           </div>
-        </div>
+
+        </template>
 
         <!-- Form Fields -->
         <template v-else>
@@ -113,6 +126,52 @@
             <p v-if="errors.payment_method" class="text-red-500 text-xs mt-2">{{ errors.payment_method }}</p>
           </div>
 
+          <!-- Discount Code -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 class="font-black text-gray-900 text-base mb-4 flex items-center gap-2">
+              <TagIcon class="w-5 h-5 text-blue-600" />
+              Discount Code
+              <span class="text-xs font-medium text-gray-400">(optional)</span>
+            </h2>
+
+            <div v-if="appliedCoupon" class="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+              <div class="flex items-center gap-2">
+                <CheckCircleIcon class="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span class="text-sm font-bold text-emerald-700">{{ appliedCoupon }}</span>
+                <span class="text-xs text-emerald-600">applied &middot; -${{ discountAmount.toFixed(2) }}</span>
+              </div>
+              <button
+                type="button"
+                @click="removeCoupon"
+                class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div v-else class="flex gap-2">
+              <input
+                v-model="couponCode"
+                type="text"
+                placeholder="Enter code"
+                @keyup.enter="applyCoupon"
+                class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-100 transition-colors uppercase tracking-wide"
+              />
+              <button
+                type="button"
+                @click="applyCoupon"
+                :disabled="applyingCoupon || !couponCode.trim()"
+                class="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0"
+                :class="applyingCoupon || !couponCode.trim()
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-900 hover:bg-blue-600 text-white'"
+              >
+                {{ applyingCoupon ? 'Checking...' : 'Apply' }}
+              </button>
+            </div>
+            <p v-if="couponError" class="text-red-500 text-xs mt-2">{{ couponError }}</p>
+          </div>
+
           <!-- Order Notes -->
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 class="font-black text-gray-900 text-base mb-4 flex items-center gap-2">
@@ -168,10 +227,12 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-gray-800 line-clamp-1">{{ item.product?.name }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">× {{ item.quantity }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  <span v-if="item.variant">Size: {{ item.variant.size }} &middot; </span>× {{ item.quantity }}
+                </p>
               </div>
               <p class="text-xs font-black text-gray-900 flex-shrink-0">
-                ${{ (Number(item.product?.price ?? 0) * item.quantity).toFixed(2) }}
+                ${{ (Number(item.product?.is_on_sale ? item.product.sale_price : item.product?.price ?? 0) * item.quantity).toFixed(2) }}
               </p>
             </div>
           </div>
@@ -182,11 +243,19 @@
               <span>Subtotal</span>
               <span>${{ subtotal.toFixed(2) }}</span>
             </div>
+            <div v-if="discountAmount > 0" class="flex justify-between text-sm text-emerald-600 font-semibold">
+              <span>Discount{{ appliedCoupon ? ` (${appliedCoupon})` : '' }}</span>
+              <span>-${{ discountAmount.toFixed(2) }}</span>
+            </div>
             <div class="flex justify-between text-sm text-gray-500">
               <span>Shipping</span>
               <span :class="isFreeShipping ? 'text-green-600 font-semibold' : ''">
                 {{ isFreeShipping ? 'Free' : '$5.00' }}
               </span>
+            </div>
+            <div v-if="taxRate > 0" class="flex justify-between text-sm text-gray-500">
+              <span>Tax ({{ taxRate }}%)</span>
+              <span>${{ taxAmount.toFixed(2) }}</span>
             </div>
             <div class="flex justify-between font-black text-gray-900 text-lg pt-3 border-t border-gray-100">
               <span>Total</span>
@@ -234,10 +303,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { imageUrl } from '@/api/axios'
 import cartService from '@/services/cartService'
 import orderService from '@/services/orderService'
+import paymentService from '@/services/paymentService'
 import {
   ShoppingCartIcon,
   CheckCircleIcon,
@@ -249,12 +320,15 @@ import {
   BanknotesIcon,
   DevicePhoneMobileIcon,
   PencilSquareIcon,
+  TagIcon,
+  QrCodeIcon,
 } from '@heroicons/vue/24/outline'
 import { useCartStore } from '@/stores/cart'
 import PostOrderReviewModal from '@/components/checkout/PostOrderReviewModal.vue'
 
 // ── Store ─────────────────────────────────────────────────────────────────────
 const cartStore = useCartStore()
+const router     = useRouter()
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const cartItems       = ref([])
@@ -265,6 +339,14 @@ const errorMsg        = ref('')
 const errors          = ref({})
 const showReviewModal = ref(false)
 const orderedProducts = ref([])
+const taxRate         = ref(0)
+
+// ── Discount / coupon state ─────────────────────────────────────────────────
+const couponCode      = ref('')
+const appliedCoupon   = ref(null)   // the validated code string, once applied
+const discountAmount  = ref(0)
+const couponError     = ref('')
+const applyingCoupon  = ref(false)
 
 const form = ref({
   shipping_address: '',
@@ -273,6 +355,7 @@ const form = ref({
 })
 
 const paymentMethods = [
+  { value: 'aba_payway', label: 'ABA PayWay (KHQR / Card)', icon: QrCodeIcon },
   { value: 'cash',   label: 'Cash on Delivery', icon: BanknotesIcon },
   { value: 'card',   label: 'Credit / Debit',   icon: CreditCardIcon },
   { value: 'mobile', label: 'Mobile Pay',        icon: DevicePhoneMobileIcon },
@@ -280,26 +363,62 @@ const paymentMethods = [
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const subtotal = computed(() =>
-  cartItems.value.reduce((sum, i) => sum + Number(i.product?.price ?? 0) * i.quantity, 0)
+  cartItems.value.reduce((sum, i) => {
+    const p = i.product
+    const unitPrice = p?.is_on_sale ? Number(p.sale_price ?? 0) : Number(p?.price ?? 0)
+    return sum + unitPrice * i.quantity
+  }, 0)
 )
 
 const isFreeShipping = computed(() => subtotal.value >= 50)
 
+const taxAmount = computed(() => (subtotal.value - discountAmount.value) * (taxRate.value / 100))
+
 const grandTotal = computed(() =>
-  subtotal.value + (isFreeShipping.value || subtotal.value === 0 ? 0 : 5)
+  subtotal.value - discountAmount.value + taxAmount.value + (isFreeShipping.value || subtotal.value === 0 ? 0 : 5)
 )
 
 // ── Methods ───────────────────────────────────────────────────────────────────
-async function fetchCart() {
+async function fetchCart(coupon = null) {
   loading.value = true
   try {
-    const data = await cartService.getCart()
+    const data = await cartService.getCart(coupon ? { coupon } : {})
     cartItems.value = data.items ?? []
+    taxRate.value = Number(data.tax_rate ?? 0)
+
+    if (coupon) {
+      if (data.coupon_valid && data.coupon_code) {
+        appliedCoupon.value  = data.coupon_code
+        discountAmount.value = Number(data.discount_amount ?? 0)
+        couponError.value    = ''
+      } else {
+        appliedCoupon.value  = null
+        discountAmount.value = 0
+        couponError.value    = data.coupon_message || 'Invalid discount code.'
+      }
+    }
   } catch (e) {
     console.error('Failed to load cart:', e)
   } finally {
     loading.value = false
   }
+}
+
+async function applyCoupon() {
+  const code = couponCode.value.trim()
+  if (!code) return
+  applyingCoupon.value = true
+  couponError.value = ''
+  await fetchCart(code)
+  applyingCoupon.value = false
+}
+
+function removeCoupon() {
+  appliedCoupon.value  = null
+  discountAmount.value = 0
+  couponCode.value     = ''
+  couponError.value    = ''
+  fetchCart()
 }
 
 function validate() {
@@ -322,16 +441,25 @@ async function placeOrder() {
   const productsForReview = cartItems.value.map(i => i.product).filter(Boolean)
 
   try {
-    await orderService.checkout({
+    const { order } = await orderService.checkout({
       shipping_address: form.value.shipping_address,
       payment_method:   form.value.payment_method,
       order_notes:      form.value.order_notes || undefined,
+      discount_code:    appliedCoupon.value || undefined,
     })
+
+    cartItems.value = []
+    cartStore.reset()
+
+    if (form.value.payment_method === 'aba_payway') {
+      // Order is placed (payment_status: pending) — now send the customer into
+      // ABA's checkout widget to actually pay before we call this "done".
+      await redirectToPayway(order.id)
+      return
+    }
 
     orderedProducts.value = productsForReview
     orderSuccess.value    = true
-    cartItems.value       = []
-    cartStore.reset()
 
     // Show review modal shortly after success banner appears
     setTimeout(() => { showReviewModal.value = true }, 900)
@@ -343,6 +471,82 @@ async function placeOrder() {
   }
 }
 
+// ── ABA PayWay redirect ──────────────────────────────────────────────────────
+const redirectingToPayway = ref(false)
+let paywayPollTimer = null
+
+async function redirectToPayway(orderId) {
+  redirectingToPayway.value = true
+
+  try {
+    const { endpoint, checkout_js, fields } = await paymentService.initPayway(orderId)
+
+    await loadScriptOnce(checkout_js)
+
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = endpoint
+    form.target = 'aba_webservice'
+    form.style.display = 'none'
+
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = document.createElement('input')
+      input.type  = 'hidden'
+      input.name  = name
+      input.value = value ?? ''
+      form.appendChild(input)
+    })
+
+    document.body.appendChild(form)
+    form.submit()
+
+    // Safety net: if the customer closes ABA's popup without it redirecting them
+    // back (continue_success_url), keep checking the real status ourselves.
+    pollPaywayStatus(orderId)
+
+  } catch (e) {
+    redirectingToPayway.value = false
+    submitting.value = false
+    errorMsg.value = e.response?.data?.message ?? 'Could not start ABA PayWay checkout. Please try again.'
+  }
+}
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve()
+    const script = document.createElement('script')
+    script.src = src
+    script.onload = resolve
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
+
+function pollPaywayStatus(orderId) {
+  const startedAt = Date.now()
+  const TWO_MINUTES = 2 * 60 * 1000
+
+  paywayPollTimer = setInterval(async () => {
+    if (Date.now() - startedAt > TWO_MINUTES) {
+      clearInterval(paywayPollTimer)
+      return
+    }
+    try {
+      const { payment_status } = await paymentService.checkPaywayStatus(orderId)
+      if (payment_status && payment_status !== 'pending') {
+        clearInterval(paywayPollTimer)
+        router.push({ name: 'order-detail', params: { id: orderId } })
+      }
+    } catch {
+      // ignore transient errors, keep polling
+    }
+  }, 4000)
+}
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(fetchCart)
+
+onBeforeUnmount(() => {
+  if (paywayPollTimer) clearInterval(paywayPollTimer)
+})
 </script>

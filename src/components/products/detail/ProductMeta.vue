@@ -7,7 +7,16 @@
       <h1 class="text-3xl font-black text-gray-900 tracking-tight">{{ product.name }}</h1>
 
       <div class="flex items-center gap-3 flex-wrap">
-        <p class="text-2xl font-black text-blue-600">${{ Number(product.price).toFixed(2) }}</p>
+        <p class="text-2xl font-black text-blue-600">${{ Number(displayPrice).toFixed(2) }}</p>
+        <p v-if="product.is_on_sale" class="text-base text-gray-400 line-through font-semibold">
+          ${{ Number(product.price).toFixed(2) }}
+        </p>
+        <span
+          v-if="product.is_on_sale && product.discount_percent"
+          class="text-xs font-black text-white bg-red-500 rounded-full px-2.5 py-1"
+        >
+          -{{ product.discount_percent }}%
+        </span>
 
         <!-- Stock indicator -->
         <span
@@ -40,8 +49,37 @@
       <span>{{ successMsg }}</span>
     </div>
 
+    <!-- Size selector -->
+    <div v-if="product.has_variants" class="space-y-2">
+      <label class="text-xs font-black text-gray-700 tracking-wide uppercase">
+        Size <span v-if="!selectedVariantId" class="text-red-500 font-bold normal-case">— please select</span>
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="v in product.variants"
+          :key="v.id"
+          type="button"
+          :disabled="v.stock <= 0"
+          @click="selectedVariantId = v.id"
+          class="min-w-[3rem] px-3 py-2 rounded-xl text-sm font-bold border transition-all"
+          :class="[
+            v.stock <= 0
+              ? 'border-gray-100 text-gray-300 line-through cursor-not-allowed bg-gray-50'
+              : selectedVariantId === v.id
+                ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                : 'border-gray-200 text-gray-700 hover:border-blue-300 bg-white'
+          ]"
+        >
+          {{ v.size }}
+        </button>
+      </div>
+      <p v-if="selectedVariant && selectedVariant.stock <= 5" class="text-xs font-semibold text-orange-600">
+        Only {{ selectedVariant.stock }} left in this size!
+      </p>
+    </div>
+
     <div class="pt-4 space-y-4 max-w-sm">
-      <div v-if="product.stock > 0" class="flex items-center gap-2">
+      <div v-if="availableStock > 0" class="flex items-center gap-2">
         <label class="text-xs font-black text-gray-700 tracking-wide uppercase mr-2">Quantity</label>
         <div class="flex items-center border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm h-10">
           <button
@@ -54,23 +92,23 @@
           <button
             type="button"
             @click="$emit('increment')"
-            :disabled="qty >= product.stock"
+            :disabled="qty >= availableStock"
             class="px-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:hover:bg-transparent h-full transition-colors"
           >+</button>
         </div>
-        <span class="text-xs text-gray-400 font-medium">of {{ product.stock }}</span>
+        <span class="text-xs text-gray-400 font-medium">of {{ availableStock }}</span>
       </div>
 
       <div class="flex gap-3">
         <button
           type="button"
-          @click="$emit('add-to-cart')"
-          :disabled="cartLoading || product.stock === 0"
+          @click="$emit('add-to-cart', selectedVariantId)"
+          :disabled="cartLoading || availableStock === 0 || (product.has_variants && !selectedVariantId)"
           class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:cursor-not-allowed text-white font-bold text-sm py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-600/10 active:scale-[0.99]"
         >
           <ArrowPathIcon v-if="cartLoading" class="w-4 h-4 animate-spin" />
           <ShoppingCartIcon v-else class="w-4 h-4" />
-          <span>{{ product.stock === 0 ? 'Out of Stock' : cartLoading ? 'Adding…' : 'Add to Cart' }}</span>
+          <span>{{ addToCartLabel }}</span>
         </button>
 
         <button
@@ -89,7 +127,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ArrowPathIcon, HeartIcon, TruckIcon, ShoppingCartIcon } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartIconSolid, StarIcon } from '@heroicons/vue/24/solid'
 
@@ -103,15 +141,49 @@ const props = defineProps({
 
 defineEmits(['increment', 'decrement', 'add-to-cart', 'toggle-wishlist'])
 
+const displayPrice = computed(() =>
+  props.product?.is_on_sale ? props.product.sale_price : props.product?.price
+)
+
+// ── Size selection ──────────────────────────────────────────
+const selectedVariantId = ref(null)
+
+watch(() => props.product?.id, () => {
+  selectedVariantId.value = null
+})
+
+const selectedVariant = computed(() =>
+  props.product?.variants?.find(v => v.id === selectedVariantId.value) || null
+)
+
+// Stock to check against: the selected size's stock if this product has sizes,
+// otherwise the product's own stock count.
+const availableStock = computed(() => {
+  if (props.product?.has_variants) {
+    return selectedVariant.value ? selectedVariant.value.stock : 0
+  }
+  return props.product?.stock ?? 0
+})
+
+const addToCartLabel = computed(() => {
+  if (props.product?.has_variants && !selectedVariantId.value) return 'Select a Size'
+  if (availableStock.value === 0) return 'Out of Stock'
+  if (props.cartLoading) return 'Adding…'
+  return 'Add to Cart'
+})
+
 const stockClass = computed(() => {
-  const s = props.product.stock
+  const s = availableStock.value
   if (s === 0)  return 'bg-red-50 text-red-700'
   if (s <= 5)   return 'bg-orange-50 text-orange-700'
   return 'bg-emerald-50 text-emerald-700'
 })
 
 const stockLabel = computed(() => {
-  const s = props.product.stock
+  const s = availableStock.value
+  if (props.product?.has_variants && !selectedVariantId.value) {
+    return props.product?.total_stock > 0 ? 'In Stock' : 'Out of Stock'
+  }
   if (s === 0) return 'Out of Stock'
   if (s <= 5)  return `Only ${s} left!`
   return `In Stock (${s})`

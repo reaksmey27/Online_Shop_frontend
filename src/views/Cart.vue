@@ -114,10 +114,11 @@ const selectedItems = computed(() =>
 )
 
 const selectedTotal = computed(() =>
-  selectedItems.value.reduce(
-    (sum, item) => sum + Number(item.product?.price ?? 0) * item.quantity,
-    0
-  )
+  selectedItems.value.reduce((sum, item) => {
+    const p = item.product
+    const unitPrice = p?.is_on_sale ? Number(p.sale_price ?? 0) : Number(p?.price ?? 0)
+    return sum + unitPrice * item.quantity
+  }, 0)
 )
 
 async function fetchCart() {

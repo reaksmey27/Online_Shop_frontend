@@ -20,6 +20,7 @@
         <form
           @submit.prevent="doSearch"
           class="hidden md:flex flex-1 max-w-xl items-center relative"
+          ref="desktopSearchRef"
         >
           <div class="relative w-full">
             <MagnifyingGlassIcon
@@ -31,6 +32,7 @@
               placeholder="Search products..."
               class="w-full pl-10 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all placeholder:text-gray-400"
               @keydown.esc="searchQuery = ''"
+              @focus="onSearchFocus"
             />
             <button
               v-if="searchQuery"
@@ -40,6 +42,48 @@
             >
               <XMarkIcon class="w-4 h-4" />
             </button>
+
+            <!-- Live suggestions -->
+            <div
+              v-if="showSuggestions"
+              class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50"
+            >
+              <div v-if="searchLoading" class="p-4 text-center text-xs text-gray-400">
+                Searching...
+              </div>
+              <template v-else-if="liveResults.length > 0">
+                <button
+                  v-for="p in liveResults"
+                  :key="p.id"
+                  type="button"
+                  @click="selectSuggestion(p)"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div class="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img v-if="p.image" :src="imageUrl(p.image)" :alt="p.name" class="w-full h-full object-cover" @error="e => e.target.style.display = 'none'">
+                    <CubeIcon v-else class="w-4 h-4 text-gray-300" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ p.name }}</p>
+                    <p class="text-[11px] text-gray-400">{{ p.category?.name }}</p>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-black text-gray-900">${{ Number(p.is_on_sale ? p.sale_price : p.price).toFixed(2) }}</p>
+                    <p v-if="p.is_on_sale" class="text-[11px] text-gray-400 line-through">${{ Number(p.price).toFixed(2) }}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  @click="viewAllResults"
+                  class="w-full px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors text-center border-t border-gray-100"
+                >
+                  View all results for "{{ searchQuery.trim() }}"
+                </button>
+              </template>
+              <div v-else class="p-4 text-center text-xs text-gray-400">
+                No products found for "{{ searchQuery.trim() }}"
+              </div>
+            </div>
           </div>
           <button
             type="submit"
@@ -152,18 +196,20 @@
 
           <!-- Guest -->
           <template v-else>
-            <router-link
-              to="/login"
+            <button
+              type="button"
+              @click="loginModal.open()"
               class="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 transition-colors"
             >
               Login
-            </router-link>
-            <router-link
-              to="/register"
+            </button>
+            <button
+              type="button"
+              @click="registerModal.open()"
               class="text-sm font-bold bg-gray-900 hover:bg-blue-600 text-white px-4 py-2 rounded-xl transition-all shadow-sm"
             >
               Register
-            </router-link>
+            </button>
           </template>
 
           <!-- Mobile Hamburger -->
@@ -308,6 +354,7 @@
       <div
         v-if="mobileSearchOpen"
         class="md:hidden px-4 py-3 border-b border-gray-100 bg-white"
+        ref="mobileSearchRef"
       >
         <form @submit.prevent="doSearch" class="flex gap-2">
           <div class="relative flex-1">
@@ -321,7 +368,50 @@
               placeholder="Search products..."
               class="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
               autofocus
+              @focus="onSearchFocus"
             />
+
+            <!-- Live suggestions -->
+            <div
+              v-if="showSuggestions"
+              class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-50"
+            >
+              <div v-if="searchLoading" class="p-4 text-center text-xs text-gray-400">
+                Searching...
+              </div>
+              <template v-else-if="liveResults.length > 0">
+                <button
+                  v-for="p in liveResults"
+                  :key="p.id"
+                  type="button"
+                  @click="selectSuggestion(p)"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div class="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img v-if="p.image" :src="imageUrl(p.image)" :alt="p.name" class="w-full h-full object-cover" @error="e => e.target.style.display = 'none'">
+                    <CubeIcon v-else class="w-4 h-4 text-gray-300" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ p.name }}</p>
+                    <p class="text-[11px] text-gray-400">{{ p.category?.name }}</p>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-black text-gray-900">${{ Number(p.is_on_sale ? p.sale_price : p.price).toFixed(2) }}</p>
+                    <p v-if="p.is_on_sale" class="text-[11px] text-gray-400 line-through">${{ Number(p.price).toFixed(2) }}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  @click="viewAllResults"
+                  class="w-full px-3 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors text-center border-t border-gray-100"
+                >
+                  View all results for "{{ searchQuery.trim() }}"
+                </button>
+              </template>
+              <div v-else class="p-4 text-center text-xs text-gray-400">
+                No products found for "{{ searchQuery.trim() }}"
+              </div>
+            </div>
           </div>
           <button
             type="submit"
@@ -413,20 +503,20 @@
           </button>
         </template>
         <template v-else>
-          <router-link
-            to="/login"
-            @click="mobileMenuOpen = false"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          <button
+            type="button"
+            @click="loginModal.open(); mobileMenuOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors w-full text-left"
           >
             <UserCircleIcon class="w-4 h-4" /> Login
-          </router-link>
-          <router-link
-            to="/register"
-            @click="mobileMenuOpen = false"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+          </button>
+          <button
+            type="button"
+            @click="registerModal.open(); mobileMenuOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors w-full text-left"
           >
             <UserPlusIcon class="w-4 h-4" /> Register
-          </router-link>
+          </button>
         </template>
       </div>
     </transition>
@@ -437,6 +527,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useLoginModalStore } from "@/stores/loginModal";
+import { useRegisterModalStore } from "@/stores/registerModal";
 import { useCartStore } from "@/stores/cart";
 import { imageUrl } from "@/api/axios"
 import productService from "@/services/productService";
@@ -457,9 +549,12 @@ import {
   SparklesIcon,
   BoltIcon,
   Squares2X2Icon,
+  CubeIcon,
 } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
+const loginModal = useLoginModalStore();
+const registerModal = useRegisterModalStore();
 const cartStore = useCartStore();
 const router = useRouter();
 const route = useRoute();
@@ -475,6 +570,14 @@ const loadingCategories = ref(false);
 
 const dropdownRef = ref(null);
 const categoryMenuRef = ref(null);
+const desktopSearchRef = ref(null);
+const mobileSearchRef = ref(null);
+
+// ── Live search ───────────────────────────────────────────
+const liveResults = ref([]);
+const searchLoading = ref(false);
+const showSuggestions = ref(false);
+let searchDebounceTimer = null;
 
 // ── Nav Links ─────────────────────────────────────────────
 const navLinks = [
@@ -496,7 +599,49 @@ function doSearch() {
   router.push({ name: "search", query: { q } });
   mobileSearchOpen.value = false;
   mobileMenuOpen.value = false;
+  showSuggestions.value = false;
 }
+
+function onSearchFocus() {
+  if (searchQuery.value.trim()) showSuggestions.value = true;
+}
+
+async function fetchLiveResults(q) {
+  searchLoading.value = true;
+  try {
+    const data = await productService.getProducts({ search: q, per_page: 6 });
+    // Guard against a stale response landing after the query has changed again
+    if (searchQuery.value.trim() === q) {
+      liveResults.value = data.data ?? [];
+    }
+  } catch (e) {
+    console.error("Live search failed:", e);
+  } finally {
+    if (searchQuery.value.trim() === q) searchLoading.value = false;
+  }
+}
+
+function selectSuggestion(product) {
+  showSuggestions.value = false;
+  mobileSearchOpen.value = false;
+  router.push({ name: "product-detail", params: { id: product.id } });
+}
+
+function viewAllResults() {
+  doSearch();
+}
+
+watch(searchQuery, (val) => {
+  clearTimeout(searchDebounceTimer);
+  const q = val.trim();
+  if (!q) {
+    liveResults.value = [];
+    showSuggestions.value = false;
+    return;
+  }
+  showSuggestions.value = true;
+  searchDebounceTimer = setTimeout(() => fetchLiveResults(q), 300);
+});
 
 // Sync search input with URL query on search page
 watch(
@@ -544,6 +689,11 @@ function handleClickOutside(e) {
   if (categoryMenuRef.value && !categoryMenuRef.value.contains(e.target)) {
     categoryMenuOpen.value = false;
   }
+  const insideDesktopSearch = desktopSearchRef.value && desktopSearchRef.value.contains(e.target);
+  const insideMobileSearch = mobileSearchRef.value && mobileSearchRef.value.contains(e.target);
+  if (!insideDesktopSearch && !insideMobileSearch) {
+    showSuggestions.value = false;
+  }
 }
 
 // Close menus on route change
@@ -554,6 +704,7 @@ watch(
     mobileSearchOpen.value = false;
     categoryMenuOpen.value = false;
     dropdownOpen.value = false;
+    showSuggestions.value = false;
   },
 );
 

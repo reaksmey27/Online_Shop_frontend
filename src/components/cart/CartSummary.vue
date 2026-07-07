@@ -11,10 +11,11 @@
         >
           <span class="text-gray-600 truncate flex-1 mr-3">
             {{ item.product?.name }}
+            <span v-if="item.variant" class="text-gray-400"> ({{ item.variant.size }})</span>
             <span class="text-gray-400 font-bold ml-1">× {{ item.quantity }}</span>
           </span>
           <span class="font-semibold text-gray-800 flex-shrink-0">
-            ${{ (Number(item.product?.price || 0) * item.quantity).toFixed(2) }}
+            ${{ (Number(item.product?.is_on_sale ? item.product.sale_price : item.product?.price || 0) * item.quantity).toFixed(2) }}
           </span>
         </div>
 

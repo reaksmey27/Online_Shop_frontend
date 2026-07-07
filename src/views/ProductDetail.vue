@@ -184,7 +184,7 @@ function decreaseQty() {
   if (qty.value > 1) qty.value--
 }
 
-async function addToCart() {
+async function addToCart(variantId = null) {
   if (!auth.isLoggedIn) {
     router.push({ name: 'login' })
     return
@@ -192,7 +192,7 @@ async function addToCart() {
   cartLoading.value = true
   successMsg.value  = ''
   try {
-    await cartService.addItem(product.value.id, qty.value)
+    await cartService.addItem(product.value.id, qty.value, variantId)
     cartStore.increment(qty.value)
     successMsg.value = `${qty.value} item(s) added to your cart!`
     toast.value?.show(`${qty.value} item(s) added to cart!`, 'success')

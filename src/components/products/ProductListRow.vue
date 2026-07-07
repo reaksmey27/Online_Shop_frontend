@@ -37,9 +37,20 @@
       </div>
 
       <div class="flex items-center gap-3 flex-shrink-0">
-        <span class="font-black text-gray-900">
-          ${{ Number(product.price).toFixed(2) }}
-        </span>
+        <div class="flex items-baseline gap-1.5 flex-wrap justify-end">
+          <span class="font-black text-gray-900">
+            ${{ Number(product.is_on_sale ? product.sale_price : product.price).toFixed(2) }}
+          </span>
+          <span v-if="product.is_on_sale" class="text-xs text-gray-400 line-through font-medium">
+            ${{ Number(product.price).toFixed(2) }}
+          </span>
+          <span
+            v-if="product.is_on_sale && product.discount_percent"
+            class="text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 py-0.5"
+          >
+            -{{ product.discount_percent }}%
+          </span>
+        </div>
         <button
           @click="$emit('add-to-cart', product)"
           :disabled="product.stock <= 0"

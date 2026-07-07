@@ -33,8 +33,14 @@
       >
         {{ productName }}
       </router-link>
-      <p class="text-gray-900 font-black text-sm mt-1">
+      <p v-if="item.variant" class="text-xs text-gray-500 font-medium mt-0.5">
+        Size: <span class="text-gray-700 font-bold">{{ item.variant.size }}</span>
+      </p>
+      <p class="text-gray-900 font-black text-sm mt-1 flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
         {{ formattedUnitPrice }}
+        <span v-if="isOnSale" class="text-xs text-gray-400 line-through font-medium">
+          ${{ productOriginalPrice.toFixed(2) }}
+        </span>
       </p>
     </div>
 
@@ -108,7 +114,13 @@ const productImage = computed(() => {
   return product.value.image ? imageUrl(product.value.image) : null
 })
 
-const productPrice = computed(() => Number(product.value.price || 0))
+const isOnSale = computed(() => Boolean(product.value.is_on_sale))
+
+const productOriginalPrice = computed(() => Number(product.value.price || 0))
+
+const productPrice = computed(() =>
+  isOnSale.value ? Number(product.value.sale_price || 0) : productOriginalPrice.value
+)
 
 const formattedUnitPrice = computed(() => `$${productPrice.value.toFixed(2)}`)
 
@@ -118,7 +130,7 @@ const formattedTotalPrice = computed(() => {
 })
 
 const isMaxStockReached = computed(() => {
-  const stock = product.value.stock ?? 0
+  const stock = props.item.variant ? (props.item.variant.stock ?? 0) : (product.value.stock ?? 0)
   return props.item.quantity >= stock
 })
 

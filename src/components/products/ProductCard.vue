@@ -9,9 +9,15 @@
   >
     <div :class="isListView ? 'w-40 shrink-0' : 'w-full'">
       <div
-        class="bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100/60"
+        class="relative bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100/60"
         :class="isListView ? 'h-24 w-40' : 'aspect-[4/3] w-full'"
       >
+        <span
+          v-if="product.is_on_sale"
+          class="absolute top-2 left-2 z-10 text-[10px] font-black text-white bg-red-500 rounded-full px-2 py-1 shadow-sm"
+        >
+          {{ product.discount_percent ? `-${product.discount_percent}%` : 'SALE' }}
+        </span>
         <img
           v-if="productImage && !imgLoadError"
           :src="imageUrl(productImage)"
@@ -43,15 +49,15 @@
         </p>
       </div>
 
-      <div class="mt-2.5 flex items-baseline gap-2">
+      <div class="mt-2.5 flex items-baseline gap-2 flex-wrap">
         <span class="font-black text-gray-900 text-base tracking-tight">
-          ${{ Number(product.price || 0).toFixed(2) }}
+          ${{ Number(displayPrice).toFixed(2) }}
         </span>
         <span
-          v-if="product.original_price"
+          v-if="product.is_on_sale"
           class="text-xs text-gray-400 line-through font-medium"
         >
-          ${{ Number(product.original_price).toFixed(2) }}
+          ${{ Number(product.price).toFixed(2) }}
         </span>
         <span v-if="avgRating" class="ml-auto text-xs font-semibold text-amber-500 flex items-center gap-0.5">
           ★ {{ avgRating }}
@@ -107,6 +113,10 @@ const avgRating = computed(() => {
   const r = props.product?.average_rating ?? props.product?.reviews_avg_rating
   return r ? Number(r).toFixed(1) : null
 })
+
+const displayPrice = computed(() =>
+  props.product?.is_on_sale ? props.product.sale_price : (props.product?.price || 0)
+)
 
 function handleImageError() {
   imgLoadError.value = true;

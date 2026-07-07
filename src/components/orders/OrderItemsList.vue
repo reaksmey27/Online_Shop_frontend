@@ -24,7 +24,7 @@
             {{ item.product?.name ?? 'Product removed' }}
           </p>
           <p class="text-xs text-gray-400 mt-0.5">
-            ${{ Number(item.price).toFixed(2) }} × {{ item.quantity }}
+            <span v-if="item.variant_label">Size: {{ item.variant_label }} &middot; </span>${{ Number(item.price).toFixed(2) }} × {{ item.quantity }}
           </p>
         </div>
 
@@ -35,11 +35,25 @@
       </div>
     </div>
 
-    <div class="px-5 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
-      <span class="text-sm font-medium text-gray-500">Total</span>
-      <span class="font-bold text-gray-900">
-        ${{ Number(totalAmount).toFixed(2) }}
-      </span>
+    <div class="px-5 py-4 border-t border-gray-100 bg-gray-50/50 space-y-1.5">
+      <div v-if="subtotal !== null" class="flex justify-between items-center text-xs text-gray-500">
+        <span>Subtotal</span>
+        <span>${{ Number(subtotal).toFixed(2) }}</span>
+      </div>
+      <div v-if="discountAmount !== null && Number(discountAmount) > 0" class="flex justify-between items-center text-xs text-emerald-600 font-semibold">
+        <span>Discount{{ discountCode ? ` (${discountCode})` : '' }}</span>
+        <span>-${{ Number(discountAmount).toFixed(2) }}</span>
+      </div>
+      <div v-if="taxAmount !== null && Number(taxRate) > 0" class="flex justify-between items-center text-xs text-gray-500">
+        <span>Tax ({{ Number(taxRate) }}%)</span>
+        <span>${{ Number(taxAmount).toFixed(2) }}</span>
+      </div>
+      <div class="flex justify-between items-center pt-1.5">
+        <span class="text-sm font-medium text-gray-500">Total</span>
+        <span class="font-bold text-gray-900">
+          ${{ Number(totalAmount).toFixed(2) }}
+        </span>
+      </div>
     </div>
 
   </div>
@@ -50,7 +64,12 @@ import { imageUrl } from '@/api/axios'
 import { CubeIcon } from '@heroicons/vue/24/outline'
 
 defineProps({
-  items:       { type: Array, default: () => [] },
-  totalAmount: { type: [String, Number], default: 0 }
+  items:            { type: Array, default: () => [] },
+  totalAmount:      { type: [String, Number], default: 0 },
+  subtotal:         { type: [String, Number, null], default: null },
+  taxRate:          { type: [String, Number, null], default: null },
+  taxAmount:        { type: [String, Number, null], default: null },
+  discountCode:     { type: [String, null], default: null },
+  discountAmount:   { type: [String, Number, null], default: null }
 })
 </script>

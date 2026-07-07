@@ -2,14 +2,18 @@ import api from '@/api/axios'
 
 const cartService = {
   // ── Manage Cart State ──────────────────────────────
-  async getCart() {
-    const { data } = await api.get('/cart')
+  async getCart(params = {}) {
+    const { data } = await api.get('/cart', { params })
     return data
   },
 
   // ── Mutate Items ───────────────────────────────────
-  async addItem(productId, quantity = 1) {
-    const { data } = await api.post('/cart', { product_id: productId, quantity })
+  async addItem(productId, quantity = 1, variantId = null) {
+    const { data } = await api.post('/cart', {
+      product_id: productId,
+      quantity,
+      ...(variantId ? { product_variant_id: variantId } : {}),
+    })
     return data
   },
 

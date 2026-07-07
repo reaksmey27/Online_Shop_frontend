@@ -35,6 +35,40 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
+      <!-- Promo Codes -->
+      <div v-if="discounts.length > 0" class="mb-10">
+        <h2 class="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
+          <TagIcon class="w-5 h-5 text-red-500" /> Promo Codes
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="d in discounts" :key="d.id"
+               class="relative bg-white border border-dashed border-red-200 rounded-2xl p-4 flex items-center gap-4 overflow-hidden">
+            <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-orange-500
+                        text-white flex items-center justify-center font-black text-sm text-center leading-tight">
+              {{ d.type === 'percentage' ? `${trimZeros(d.value)}%` : `$${trimZeros(d.value)}` }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p v-if="d.description" class="text-xs text-gray-500 truncate">{{ d.description }}</p>
+              <p v-if="d.min_order_amount" class="text-[11px] text-gray-400">
+                Min. order ${{ Number(d.min_order_amount).toFixed(2) }}
+              </p>
+              <p v-if="d.expires_at" class="text-[11px] text-gray-400">
+                Expires {{ new Date(d.expires_at).toLocaleDateString() }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="copyCode(d.code)"
+              class="flex-shrink-0 flex items-center gap-1.5 border border-red-200 text-red-600
+                     font-black text-xs px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+            >
+              <component :is="copiedCode === d.code ? CheckIcon : ClipboardIcon" class="w-3.5 h-3.5" />
+              {{ d.code }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Filter Bar -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -78,11 +112,11 @@
                    @error="e => e.target.style.display = 'none'">
               <CubeIcon v-else class="w-16 h-16 text-gray-300 stroke-[1.5]" />
             </div>
-            <!-- HOT Badge -->
-            <div class="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-orange-500
+            <!-- Discount Badge -->
+            <div v-if="product.discount_percent" class="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-orange-500
                         text-white text-[10px] font-black px-2.5 py-1 rounded-full
                         uppercase tracking-wider shadow-sm">
-              <FireIcon class="w-3.5 h-3.5 inline-block mr-1" /> Deal
+              -{{ product.discount_percent }}%
             </div>
             <!-- Stock Warning -->
             <div v-if="product.stock > 0 && product.stock <= 10"
@@ -107,6 +141,9 @@
             <div class="mt-3 flex items-center justify-between">
               <div>
                 <p class="text-red-600 font-black text-lg leading-none">
+                  ${{ Number(product.sale_price ?? product.price).toFixed(2) }}
+                </p>
+                <p v-if="product.is_on_sale" class="text-gray-400 text-xs line-through mt-0.5">
                   ${{ Number(product.price).toFixed(2) }}
                 </p>
               </div>
@@ -169,6 +206,7 @@ import ToastNotification from '@/components/common/ToastNotification.vue'
 import { imageUrl } from '@/api/axios'
 import productService from '@/services/productService'
 import cartService from '@/services/cartService'
+import discountService from '@/services/discountService'
 import {
     BoltIcon,
     ShoppingCartIcon,
@@ -176,6 +214,9 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     FireIcon,
+    TagIcon,
+    ClipboardIcon,
+    CheckIcon,
 } from '@heroicons/vue/24/outline'
 
 const toast = ref(null)
@@ -188,6 +229,34 @@ const sortBy      = ref('price_asc')
 const total       = ref(0)
 const currentPage = ref(1)
 const lastPage    = ref(1)
+
+// ── Promo Codes ────────────────────────────────────────────
+const discounts  = ref([])
+const copiedCode = ref(null)
+
+function trimZeros(n) {
+    return String(Number(n)).replace(/\.0+$/, '')
+}
+
+async function fetchDiscounts() {
+    try {
+        discounts.value = await discountService.getPublicDiscounts()
+    } catch (e) {
+        console.error('Failed to load promo codes:', e)
+    }
+}
+
+async function copyCode(code) {
+    try {
+        await navigator.clipboard.writeText(code)
+    } catch (e) {
+        // Clipboard API unavailable — silently ignore, the code is still visible to copy manually
+    }
+    copiedCode.value = code
+    setTimeout(() => {
+        if (copiedCode.value === code) copiedCode.value = null
+    }, 2000)
+}
 
 // ── Countdown Timer ───────────────────────────────────────
 const now        = new Date()
@@ -241,6 +310,7 @@ async function fetchDeals() {
                 per_page: 12,
                 sort,
                 order,
+                on_sale:  1,
             })
         products.value    = data.data
         total.value       = data.total
@@ -273,5 +343,8 @@ async function addToCart(product) {
     }
 }
 
-onMounted(fetchDeals)
+onMounted(() => {
+    fetchDeals()
+    fetchDiscounts()
+})
 </script>

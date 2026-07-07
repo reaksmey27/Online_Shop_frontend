@@ -40,6 +40,12 @@
           :to="`/products/${product.id}`"
           class="relative block bg-gray-50 border-b border-gray-50"
         >
+          <span
+            v-if="product.is_on_sale"
+            class="absolute top-2 left-2 z-10 text-[10px] font-black text-white bg-red-500 rounded-full px-2 py-1 shadow-sm"
+          >
+            {{ product.discount_percent ? `-${product.discount_percent}%` : 'SALE' }}
+          </span>
           <div class="aspect-[4/3] sm:aspect-[3/2] w-full relative">
             <div class="absolute inset-0 flex items-center justify-center p-4">
               <img
@@ -75,8 +81,11 @@
             <div
               class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
             >
-              <span class="text-gray-900 font-extrabold text-base">
-                ${{ Number(product.price || 0).toFixed(2) }}
+              <span class="text-gray-900 font-extrabold text-base flex items-center gap-1.5 flex-wrap">
+                ${{ Number(product.is_on_sale ? product.sale_price : (product.price || 0)).toFixed(2) }}
+                <span v-if="product.is_on_sale" class="text-xs text-gray-400 line-through font-medium">
+                  ${{ Number(product.price).toFixed(2) }}
+                </span>
               </span>
               <button
                 @click="addToCart(product)"

@@ -91,7 +91,15 @@
         <!-- Main content -->
         <div class="flex flex-col lg:flex-row gap-5">
           <div class="flex-1 min-w-0">
-            <OrderItemsList :items="order.items" :total-amount="order.total_amount" />
+            <OrderItemsList
+              :items="order.items"
+              :total-amount="order.total_amount"
+              :subtotal="order.subtotal"
+              :tax-rate="order.tax_rate"
+              :tax-amount="order.tax_amount"
+              :discount-code="order.discount_code"
+              :discount-amount="order.discount_amount"
+            />
           </div>
           <OrderSidebarInfo
             :address="order.shipping_address"
