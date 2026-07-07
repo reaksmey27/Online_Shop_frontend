@@ -41,14 +41,11 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('user', JSON.stringify(data))
         return data
     }
-
-    /** Get the Google OAuth redirect URL then redirect the browser */
     async function loginWithGoogle() {
         const data = await authService.googleAuthUrl()
         window.location.href = data.url
     }
 
-    /** Called on the /auth/google/callback page */
     async function googleCallback(code) {
         const data = await authService.googleCallback(code)
         _setAuth(data)
